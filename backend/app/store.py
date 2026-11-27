@@ -24,6 +24,14 @@ class Store:
         self._idempotency: dict[str, dict[str, Any]] = {}
         # 冻结标记：被不合格处置关联的记录 id -> True
         self._frozen: dict[tuple[str, int], str] = {}
+        # 工序协同内部台账：机器采样文件、成条交班、交班导出、发酵接料。
+        # 这些不是独立业务模块，不进入概览的 18 个模块计数。
+        self._ops: dict[str, list[dict[str, Any]]] = {
+            "rolling_files": [],
+            "rolling_handovers": [],
+            "handover_exports": [],
+            "fermentation_receipts": [],
+        }
         # 初始化建种子血缘索引
         self._build_lineage_from_seed()
 
@@ -108,6 +116,28 @@ class Store:
     def get_batch_lineage_nodes(self, batch_no: str) -> list[dict[str, Any]]:
         """返回批次血缘链中所有原始记录引用（不含当前数据副本）。"""
         return [dict(e) for e in self._lineage.get(batch_no, [])]
+
+    def register_lineage_if_absent(self, batch_no: str, module: str, entry_id: int) -> None:
+        """仅在线血中不存在该记录时注册，避免同一盆茶反复导入重复领料。"""
+        self.register_lineage(batch_no, module, entry_id)
+
+    # ── 工序协同内部台账 ──
+
+    def ops_rows(self, name: str) -> list[dict[str, Any]]:
+        return self._ops.setdefault(name, [])
+
+    def ops_find(self, name: str, entry_id: int) -> dict[str, Any] | None:
+        for row in self.ops_rows(name):
+            if int(row.get("id", 0)) == entry_id:
+                return row
+        return None
+
+    def ops_next_id(self, name: str) -> int:
+        return max((int(row.get("id", 0)) for row in self.ops_rows(name)), default=0) + 1
+
+    def ops_snapshot(self, name: str) -> list[dict[str, Any]]:
+        """返回内部台账的完整副本，供导出时冻结“当时来源”。"""
+        return [copy.deepcopy(row) for row in self.ops_rows(name)]
 
     # ── 幂等 ──
 

@@ -69,6 +69,31 @@ npm run dev
 | 不合格处置 | `defect` | 缺陷记录 | 缺陷类型、发现节点、处置方式 |
 | 内审巡查 | `audit` | 巡查记录 | 巡查日期、巡查要点、整改期限 |
 
+## 揉捻成条交班 / 发酵接料
+
+揉捻工序页面新增“揉捻成条交班”面板，发酵工序页面新增“发酵接料”面板。
+两处共用 `/api/collab` 路由，内部台账保存在 `store.ops_rows()`，不改变 18 个
+业务模块的计数。
+
+- `POST /api/collab/rolling/files/import`：导入机器采样文件。按实际茶盆、
+  研判时段与当次机器身份记账；只有落在本盆研判时段且机台一致的文件才
+  重算这盆的成条结果，其他时段数据只留台账。
+- `POST /api/collab/rolling/handovers`：品控凭人工复称签发成条交班，
+  默认限值 5%，超限拒绝签发。同茶盆同时只允许一份有效交班。
+- `POST /api/collab/rolling/handovers/{id}/accept-review`：受理补报文件
+  做机器核查，复核结论可稍后再签；交班结果仍按人工复称。
+- `POST /api/collab/rolling/handovers/{id}/sign-review`：签结复核结论，
+  被认定有误的补报文件保留未用于实际发酵的原值与处置。
+- `POST /api/collab/rolling/handovers/{id}/reaccept`：班组重新验收，
+  旧交班仍可查询但不再作为有效入料。
+- `POST /api/collab/rolling/handovers/{id}/export` 与
+  `GET /api/collab/rolling/handovers/{id}/sheet.csv?version=N`：交班导出与
+  历史版本交接单下载，导出时冻结“当时来源”。
+- `POST /api/collab/fermentation/{id}/receiving-draft`：发酵接料草稿关联
+  已签发的成条交接凭据；`POST /api/collab/fermentation/receipts/{id}/submit`
+  的回执直接返回是否入料与实际使用的交班号。补报文件已收到但未受理核查时
+  接料挂起不写入。
+
 ## 约定
 
 - 全部模块共享`frontend/src/views/WorkbenchView.vue|tsx`和一套资源路由。

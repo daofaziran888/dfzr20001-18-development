@@ -13,7 +13,7 @@
         <span class="head-desc">制茶师、品控员和庄园主协作管理茶园地块、制茶工序与溯源链条，确保每一批次茶叶从鲜叶到成品全程可追溯。</span>
         <span class="head-user">当前值班：应用开发组</span>
       </header>
-      <RouterView :key="$route.path" />
+      <RouterView :key="$route.fullPath" />
     </main>
   </div>
 </template>

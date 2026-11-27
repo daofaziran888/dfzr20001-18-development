@@ -37,9 +37,11 @@
       <button class="btn ghost" data-testid="reset" type="button" @click="resetFilters">重置条件</button>
     </form>
 
+    <RollingHandoverPanel v-if="meta.key === 'rolling'" />
+    <FermentationReceivingPanel v-if="meta.key === 'fermentation'" />
+
     <!-- 批次追溯链面板 -->
-    <div v-if="showTrace && traceBatchNo" class="trace-panel">
-      <h4>批次 {{ traceBatchNo }} 追溯链</h4>
+    <div v-if="showTrace && traceBatchNo" class="trace-panel">      <h4>批次 {{ traceBatchNo }} 追溯链</h4>
       <div v-if="traceLoading">加载中...</div>
       <div v-else-if="traceError" class="error-text">{{ traceError }}</div>
       <div v-else class="trace-chain-inline">
@@ -146,6 +148,8 @@ import {
 } from '@/api/backend-service'
 import { fetchTraceChain } from '@/api/pipeline-client'
 import type { EntryRow } from '@/data/types'
+import FermentationReceivingPanel from './FermentationReceivingPanel.vue'
+import RollingHandoverPanel from './RollingHandoverPanel.vue'
 
 const props = defineProps<{ moduleKey: string }>()
 const router = useRouter()
